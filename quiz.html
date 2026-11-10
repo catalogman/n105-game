@@ -105,9 +105,12 @@
   @keyframes pulse { 50% { opacity: .75; transform: scale(1.06); } }
 
   /* golden light that grows with every answer: a halo hugging the spinning centre and a gold sheen on it */
-  .halo { inset: 6% !important; background: radial-gradient(closest-side, #fff7cc 0%, #fbbf24 55%, transparent 100%);
-          opacity: calc(var(--p) * .009); transform: scale(calc(.9 + var(--p) * .0025)); filter: blur(14px); }
-  .shine { inset: 12.1% !important; background: radial-gradient(circle at 50% 50%, #fde68a 0%, #fbbf2400 70%); mix-blend-mode: screen; opacity: calc(var(--p) * .0045); }
+  /* (the halo sits behind the ring and reaches past it, so the petals can't hide it; the rim and sheen sit on top) */
+  .halo { inset: -30% !important; background: radial-gradient(closest-side, #fff7cc 0%, #fbbf24 35%, #f59e0b55 60%, transparent 100%);
+          opacity: calc(var(--p) * .01); transform: scale(calc(.75 + var(--p) * .004)); animation: breathe 2.4s ease-in-out infinite; }
+  @keyframes breathe { 50% { filter: brightness(1.35); } }
+  .rim { inset: 12.1% !important; box-shadow: 0 0 calc(var(--p) * .5px) calc(var(--p) * .12px) #fbbf24, inset 0 0 calc(var(--p) * .45px) calc(var(--p) * .08px) #fde68a; }
+  .shine { inset: 12.1% !important; background: radial-gradient(circle at 50% 50%, #fff7cc 0%, #fde68a 30%, #fbbf2400 75%); mix-blend-mode: screen; opacity: calc(var(--p) * .007); }
 
   /* «show my spell»: a burst of gold from the centre, then the spirits scatter */
   .burst { position: fixed; left: 0; top: 0; width: 40px; height: 40px; margin: -20px 0 0 -20px; border-radius: 50%; pointer-events: none; z-index: 5; opacity: 0;
@@ -137,6 +140,7 @@
   .send { width: 100%; max-width: 420px; height: 62px; font-weight: 900; font-size: 20px; background: linear-gradient(135deg, #b45309, #fbbf24); display: none; }
   .finished .btns, .finished .back { display: none; }
   .finished .send { display: block; }
+  .ver { position: fixed; left: 8px; bottom: 6px; font-size: 10px; color: #ffffff55; }  /* which build Telegram opened */
   .note { font-weight: 700; font-size: 13px; color: #fde68a; text-align: center; min-height: 18px; margin: 0; }
 </style>
 </head>
@@ -145,12 +149,13 @@
 <div class="stars" aria-hidden="true"></div>
 <main class="stage">
   <div class="ring" role="progressbar" aria-label="پیشرفت سؤال‌ها" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-    <div class="glow"></div>
     <div class="halo"></div>
+    <div class="glow"></div>
     <div class="ghost img"></div>
     <div class="petals"><i class="img"></i></div>
     <div class="core"></div>
     <div class="shine"></div>
+    <div class="rim"></div>
     <div class="seam"></div>
     <div class="spark"></div>
   </div>
@@ -164,6 +169,7 @@
   <button class="send" id="send">🔮 جادوی مناسب من رو نشون بده</button>
   <button class="back" id="back">↩ سؤال قبلی</button>
   <p class="note" id="note"></p>
+  <small class="ver">v4</small>
 </main>
 <script>
 // The checklist as a page inside Telegram: answers are collected here with no round trip per question,
