@@ -25,7 +25,7 @@ const tg = window.Telegram && Telegram.WebApp;
 if (tg) { tg.ready(); tg.expand(); }
 const qs = new URLSearchParams(location.search);
 const U = tg && tg.initDataUnsafe && tg.initDataUnsafe.user;
-const PLAYER = (U && (U.first_name || (U.username && "@" + U.username))) || qs.get("name") || "رفیق";
+const PLAYER = (U && (U.first_name || (U.username && "@" + U.username))) || qs.get("name") || ""; // no name outside Telegram: nothing is shown under the player
 
 const cv = document.getElementById("c");
 const g = cv.getContext("2d");
@@ -111,15 +111,9 @@ const STAGES = [
 ];
 
 // ---- sound: all synthesized with WebAudio, no files ----
-let AC = null, crowdGain = null, musicOn = false;
+let AC = null, musicOn = false;
 function audio() {
   if (AC) return; try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch { return; }
-  // crowd murmur: band-passed noise that swells as more people arrive
-  const len = AC.sampleRate * 2, buf = AC.createBuffer(1, len, AC.sampleRate), d = buf.getChannelData(0);
-  for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
-  const src = AC.createBufferSource(); src.buffer = buf; src.loop = true;
-  const bp = AC.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = 500; bp.Q.value = 0.8;
-  crowdGain = AC.createGain(); crowdGain.gain.value = 0; src.connect(bp).connect(crowdGain).connect(AC.destination); src.start();
   musicOn = true; music();
 }
 function tone(f, t, dur, type = "square", vol = 0.06, slide = 0) {
@@ -128,15 +122,16 @@ function tone(f, t, dur, type = "square", vol = 0.06, slide = 0) {
   v.gain.setValueAtTime(vol, t); v.gain.exponentialRampToValueAtTime(0.0001, t + dur); o.connect(v).connect(AC.destination); o.start(t); o.stop(t + dur + 0.02);
 }
 // a little bouncy loop in a Persian-ish scale (Shur-like), faster on later stages
-const MEL = [293.7, 311.1, 349.2, 392, 349.2, 311.1, 293.7, 261.6];
+const MEL = [220, 233.1, 277.2, 293.7, 329.6, 293.7, 277.2, 233.1, 220, 174.6, 196, 233.1, 220, 207.7, 220, 164.8]; // A phrygian dominant
 let beat = 0;
 function music() {
   if (!AC || !musicOn) return;
-  const t = AC.currentTime, step = state === "play" ? 0.24 - lvl * 0.03 : 0.32;
+  const t = AC.currentTime, step = state === "play" ? [0.3, 0.24, 0.18][lvl] : 0.34;
   if (state === "play" || state === "title" || state === "intro") {
-    tone(MEL[beat % 8] * (beat % 16 < 8 ? 1 : 1.5), t, step * 0.9, "triangle", 0.045);
-    if (beat % 2 === 0) tone(110, t, 0.12, "sine", 0.12, -60); // doum
-    if (beat % 4 === 3) tone(220, t, 0.05, "square", 0.03); // tak
+    if (beat % 2 === 0) tone(MEL[(beat / 2) % 16], t, step * 1.6, "square", 0.022); // lead, every other step
+    tone(beat % 4 < 2 ? 55 : 51.9, t, step * 0.7, "triangle", 0.09); // pulsing bass
+    if (beat % 4 === 0) tone(90, t, 0.15, "sine", 0.14, -50); // kick
+    if (state === "play" && lvl > 0 && beat % 2 === 1) tone(3000, t, 0.03, "square", 0.008); // tick, from stage 2 on
   }
   beat++; setTimeout(music, step * 1000);
 }
@@ -210,7 +205,7 @@ function drawPlayer(x, y, t, hurt) {
   const b = Math.sin(t / 200) * 3 * S;
   pill("تو", x, y - 48 * S + b, 15, false, "#f59e0b", "#fbbf24");
   g.fillStyle = "#fbbf24"; g.beginPath(); g.moveTo(x - 7 * S, y - 33 * S + b); g.lineTo(x + 7 * S, y - 33 * S + b); g.lineTo(x, y - 25 * S + b); g.fill();
-  pill(PLAYER, x, y + 76 * S, 12);
+  if (PLAYER) pill(PLAYER, x, y + 76 * S, 12);
 }
 
 // Nimah: black cloak, a golden faceless face, and a golden halo pouring out of the cloak
@@ -271,7 +266,6 @@ function spawn(now) {
 }
 
 function update(now, dt) {
-  if (crowdGain) crowdGain.gain.value = state === "play" || state === "intro" ? STAGES[lvl].crowd : state === "title" ? 0.02 : 0;
   if (state !== "play") return;
   const L = STAGES[lvl], speed = 6.5 * S;
   vx = keys.l ? -speed : keys.r ? speed : drag !== null ? Math.max(-speed, Math.min(speed, (drag - px) * 0.25)) : 0;
@@ -390,7 +384,7 @@ function render(now) {
     drawNimah(W / 2, H * 0.42 - (1 - k) * 200 * S, now, S * 0.85);
     drawKey(W / 2, H * 0.62, now, S * (0.6 + 0.4 * k));
     drawPlayer(W / 2, H * 0.74, now, false);
-    const lines = ["من به‌خاطر تو این بازی رو درست کردم", "تا بتونی با این کلید، رایگان از جادو استفاده کنی…", `ولی ${PLAYER} جان، اینو بدون:`, "این مسائل شوخی یا بازی نیست.", "این کلید تقدیم به تو 🗝️"];
+    const lines = ["من به‌خاطر تو این بازی رو درست کردم", "تا بتونی با این کلید، رایگان از جادو استفاده کنی…", `ولی ${PLAYER || "عزیز"} جان، اینو بدون:`, "این مسائل شوخی یا بازی نیست.", "این کلید تقدیم به تو 🗝️"];
     const shown = Math.min(lines.length, Math.floor((now - endT) / 900));
     if (shown > 0) card(lines, 8 * S, shown, 2);
     if (now - endT > 900 * 6) btn = button(tg ? "🗝️ دریافت جادوی رایگان" : "🗝️ برنده شدی!", H * 0.92);
