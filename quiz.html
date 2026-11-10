@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>کدوم جادو مناسب منه؟</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="questions.js"></script>
+<style>
+  @font-face { font-family: Kalameh; src: url("fonts/Kalameh-Black.ttf"); font-weight: 900; }
+  @font-face { font-family: Kalameh; src: url("fonts/Kalameh-Bold.ttf"); font-weight: 400 800; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    font-family: Kalameh, Tahoma, sans-serif; color: #fdf4ff; overflow: hidden; user-select: none; -webkit-user-select: none;
+    background: radial-gradient(120% 80% at 50% 0%, #4c1d95 0%, #2a1065 45%, #12062b 100%);
+  }
+  .stars i { position: fixed; color: #fde68a; opacity: .5; font-style: normal; animation: twinkle 3s ease-in-out infinite; }
+  @keyframes twinkle { 50% { opacity: .1; transform: scale(.7); } }
+
+  .stage { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: space-evenly; padding: 14px 16px 18px; }
+
+  /* ---- the loading ring: the logo's own artwork in three layers ---- */
+  /* radii as a share of the picture's half-width (measured on the artwork): petals run from 75.8% to 96.9% */
+  .ring { --p: 0; position: relative; width: min(74vw, 40vh, 340px); aspect-ratio: 1; flex: none; }
+  .ring > * { position: absolute; inset: 0; border-radius: 50%; }
+  .ring .img { background: url("mandala.jpg") center / cover; }
+  .glow { inset: -14% !important; background: radial-gradient(closest-side, #fbbf24 0%, #a855f7 45%, transparent 72%); opacity: calc(.18 + var(--p) * .005); filter: blur(10px); }
+  .ghost, .petals {
+    -webkit-mask-image: radial-gradient(circle closest-side, transparent 75.6%, #000 76%, #000 96.5%, transparent 96.9%);
+    mask-image: radial-gradient(circle closest-side, transparent 75.6%, #000 76%, #000 96.5%, transparent 96.9%);
+  }
+  .ghost { filter: grayscale(1) brightness(1.15); opacity: .3; }                 /* petals not earned yet */
+  .petals { opacity: 0; }
+  .ring.started .petals { opacity: 1; }
+  .petals i {                                                                    /* earned petals: revealed clockwise from the top */
+    position: absolute; inset: 0;
+    -webkit-mask-image: conic-gradient(#000 calc(var(--p) * 1%), transparent calc(var(--p) * 1% + .6%));
+    mask-image: conic-gradient(#000 calc(var(--p) * 1%), transparent calc(var(--p) * 1% + .6%));
+  }
+  .core { inset: 12.1% !important; background: url("mandala.jpg") center / 131.93%; animation: spin 9s linear infinite; }   /* the spinning centre */
+  .seam { inset: 12.1% !important; border: 2px solid #7f1d1d; box-shadow: 0 0 0 1px #f5d77a55, inset 0 0 18px #12062b88; }
+  .spark { transform: rotate(calc(var(--p) * 3.6deg)); opacity: 0; transition: opacity .3s; border-radius: 0 !important; }
+  .ring.started:not(.done) .spark { opacity: 1; }
+  .spark::after { content: ""; position: absolute; left: 50%; top: 6.8%; width: 10px; height: 10px; margin: -5px; border-radius: 50%; background: #fff7cc; box-shadow: 0 0 10px 4px #fbbf24, 0 0 22px 8px #fbbf2466; }
+  .ring.done .core { animation-duration: 4s; }
+  .ring.done .glow { animation: pulse 1.6s ease-in-out infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes pulse { 50% { opacity: .75; transform: scale(1.06); } }
+
+  .count { font-weight: 700; font-size: 14px; color: #f5d77a; background: #12062b99; border: 1.5px solid #f5d77a66; padding: 5px 16px; border-radius: 999px; }
+  .card { width: 100%; max-width: 420px; text-align: center; min-height: 118px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; }
+  .card.swap { animation: swap .28s ease-out; }
+  @keyframes swap { from { opacity: 0; transform: translateY(10px); } }
+  .emoji { font-size: 34px; line-height: 1; }
+  .q { margin: 0; font-weight: 900; font-size: clamp(18px, 5.4vw, 23px); line-height: 1.55; text-shadow: 0 2px 10px #12062b; }
+
+  .btns { width: 100%; max-width: 420px; display: flex; gap: 10px; }
+  button { font: inherit; color: #fff; border: 3px solid #fff; border-radius: 999px; cursor: pointer; box-shadow: 0 6px 16px #12062b99; transition: transform .08s; }
+  button:active { transform: scale(.94); }
+  .btns button { flex: 1; height: 58px; font-weight: 900; font-size: 20px; }
+  .y { background: linear-gradient(135deg, #6d28d9, #c026d3); }
+  .s { background: linear-gradient(135deg, #b45309, #f59e0b); }
+  .n { background: linear-gradient(135deg, #1e3a8a, #0e7490); }
+  .back { background: none; border: 0; box-shadow: none; color: #d8b4fe; font-weight: 700; font-size: 14px; padding: 6px 14px; visibility: hidden; }
+  .back.on { visibility: visible; }
+  .send { width: 100%; max-width: 420px; height: 62px; font-weight: 900; font-size: 20px; background: linear-gradient(135deg, #b45309, #fbbf24); display: none; }
+  .finished .btns, .finished .back { display: none; }
+  .finished .send { display: block; }
+  .note { font-weight: 700; font-size: 13px; color: #fde68a; text-align: center; min-height: 18px; margin: 0; }
+</style>
+</head>
+<body>
+<div class="stars" aria-hidden="true"></div>
+<main class="stage">
+  <div class="ring" role="progressbar" aria-label="پیشرفت سؤال‌ها" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+    <div class="glow"></div>
+    <div class="ghost img"></div>
+    <div class="petals"><i class="img"></i></div>
+    <div class="core"></div>
+    <div class="seam"></div>
+    <div class="spark"></div>
+  </div>
+  <div class="count" id="count"></div>
+  <div class="card" id="card" aria-live="polite"><div class="emoji" id="emoji"></div><h1 class="q" id="q"></h1></div>
+  <div class="btns">
+    <button class="y" data-a="y"></button>
+    <button class="s" data-a="s"></button>
+    <button class="n" data-a="n"></button>
+  </div>
+  <button class="send" id="send">🔮 جادوی مناسب من رو نشون بده</button>
+  <button class="back" id="back">↩ سؤال قبلی</button>
+  <p class="note" id="note"></p>
+</main>
+<script>
+// The checklist as a page inside Telegram: answers are collected here with no round trip per question,
+// then sent to the bot in one go (sendData), which scores them and marks the menu.
+const tg = window.Telegram && Telegram.WebApp;
+const inTelegram = !!tg && tg.platform && tg.platform !== "unknown";
+if (tg) { tg.ready(); tg.expand(); try { tg.setHeaderColor("#2a1065"); tg.setBackgroundColor("#12062b"); } catch {} }
+
+const { questions: Q, answers: A } = window.QUIZ;
+const fa = (n) => n.toLocaleString("fa-IR");
+const $ = (id) => document.getElementById(id);
+const ring = document.querySelector(".ring"), stage = document.querySelector(".stage");
+const ans = [];
+
+// a few twinkling stars
+document.querySelector(".stars").innerHTML = Array.from({ length: 14 }, (_, i) =>
+  `<i style="left:${(i * 37 + 9) % 96}%;top:${(i * 53 + 5) % 92}%;font-size:${9 + (i % 3) * 5}px;animation-delay:${(i % 5) * 0.6}s">${i % 2 ? "✦" : "✧"}</i>`).join("");
+for (const b of document.querySelectorAll(".btns button")) b.textContent = A[b.dataset.a];
+
+// the ring fills smoothly to its new share instead of jumping
+let p = 0, raf = 0;
+function setP(v) {
+  p = v;
+  ring.style.setProperty("--p", v.toFixed(3));
+  ring.classList.toggle("started", v > 0.05);
+  ring.setAttribute("aria-valuenow", Math.round(v));
+}
+function fillTo(to) {
+  cancelAnimationFrame(raf);
+  const from = p, t0 = performance.now();
+  const step = (t) => {
+    const k = Math.min(1, (t - t0) / 650);
+    setP(from + (to - from) * (1 - (1 - k) ** 3));
+    if (k < 1) raf = requestAnimationFrame(step);
+  };
+  raf = requestAnimationFrame(step);
+}
+
+function show() {
+  const i = ans.length, done = i === Q.length;
+  fillTo((i / Q.length) * 100);
+  ring.classList.toggle("done", done);
+  stage.classList.toggle("finished", done);
+  $("back").classList.toggle("on", i > 0 && !done);
+  $("count").textContent = done ? "✅ کامل شد" : `سؤال ${fa(i + 1)} از ${fa(Q.length)}`;
+  // questions start with their emoji: it gets its own line
+  const [emoji, ...rest] = done ? ["✨", "همه‌ی سؤال‌ها جواب داده شد"] : Q[i].split(" ");
+  $("emoji").textContent = emoji;
+  $("q").textContent = rest.join(" ");
+  const card = $("card");
+  card.classList.remove("swap"); void card.offsetWidth; card.classList.add("swap");
+  $("note").textContent = done && !inTelegram ? "برای دیدن نتیجه، این صفحه رو از داخل ربات باز کن." : "";
+}
+
+document.querySelector(".btns").addEventListener("click", (e) => {
+  const a = e.target.dataset && e.target.dataset.a;
+  if (!a || ans.length >= Q.length) return;
+  ans.push(a);
+  try { tg.HapticFeedback.selectionChanged(); } catch {}
+  show();
+});
+$("back").addEventListener("click", () => { ans.pop(); show(); });
+let sent = false;
+$("send").addEventListener("click", () => {
+  if (sent || !inTelegram) return;
+  sent = true;
+  tg.sendData(JSON.stringify({ quiz: ans.join("") })); // Telegram closes the page and hands this to the bot
+});
+show();
+</script>
+</body>
+</html>
