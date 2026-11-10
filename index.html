@@ -3,17 +3,15 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-<title>زندگیه منه، برنده!</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700;900&display=swap" rel="stylesheet" />
+<title>کلید طلایی نیماه</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
   @font-face { font-family: Kalameh; src: url("fonts/Kalameh-Black.ttf"); font-weight: 900; }
   @font-face { font-family: Kalameh; src: url("fonts/Kalameh-Bold.ttf"); font-weight: 400 800; }
-  html, body { margin: 0; height: 100%; background: #f3e8ff; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; }
+  html, body { margin: 0; height: 100%; background: #3b1a78; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; }
   canvas { display: block; width: 100vw; height: 100vh; }
-  .ctrl { position: fixed; bottom: 22px; width: 64px; height: 64px; border-radius: 50%; border: 4px solid #fff; background: #ffffffcc; box-shadow: 0 6px 16px #a855f755; color: #7c3aed !important; font-size: 24px !important;
-          color: #fff; font: 900 30px Kalameh, Vazirmatn, Tahoma, sans-serif; display: flex; align-items: center; justify-content: center; }
+  .ctrl { position: fixed; bottom: 22px; width: 64px; height: 64px; border-radius: 50%; border: 4px solid #fff; background: #ffffffcc; box-shadow: 0 6px 16px #a855f755;
+          color: #7c3aed; font: 900 24px Kalameh, Tahoma, sans-serif; display: flex; align-items: center; justify-content: center; }
   #left { left: 18px; } #right { right: 18px; }
 </style>
 </head>
@@ -22,16 +20,15 @@
 <div class="ctrl" id="left">◀</div>
 <div class="ctrl" id="right">▶</div>
 <script>
-// «زندگیه منه، برنده!» — dodge the family's spells, reach Nimah, win the golden key.
+// «کلید طلایی نیماه» — dodge the spells of family, lovers and the neighbourhood, reach Nimah, win the golden key.
 const tg = window.Telegram && Telegram.WebApp;
 if (tg) { tg.ready(); tg.expand(); }
 const qs = new URLSearchParams(location.search);
-const PLAYER = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.first_name) || qs.get("name") || "رفیق";
+const U = tg && tg.initDataUnsafe && tg.initDataUnsafe.user;
+const PLAYER = (U && (U.first_name || (U.username && "@" + U.username))) || qs.get("name") || "رفیق";
 
 const cv = document.getElementById("c");
-const G0 = cv.getContext("2d");
-let g = G0, Q = [];
-const later = (f) => (g === G0 ? f() : Q.push(() => f()));
+const g = cv.getContext("2d");
 let W, H, S;
 function resize() {
   const dpr = Math.min(3, window.devicePixelRatio || 1);
@@ -39,35 +36,117 @@ function resize() {
   cv.width = W * dpr; cv.height = H * dpr; g.setTransform(dpr, 0, 0, dpr, 0, 0);
 }
 addEventListener("resize", resize); resize();
-const F = (w, px) => `${w} ${Math.round(px * S)}px Kalameh, Vazirmatn, Tahoma, sans-serif`;
+const F = (w, px) => `${w} ${Math.round(px * S)}px Kalameh, Tahoma, sans-serif`;
+const pick = (a) => a[Math.floor(Math.random() * a.length)];
+const SEAL = new Image(); SEAL.src = "seal.png"; // Nimah's mandala: the golden key's bow
 
-// ---- the cast: funny Telegram-sticker-style relatives and acquaintances ----
+// ---- spells: jealous family "compliments", dark (سفلی) magic, and everyday funny curses ----
+// hit = what happens to you when it lands
+const JEALOUS = [
+  { t: "«چه ماشین قشنگی داری!»", e: "🚗", c: "#f87171", hit: "تصادف کردی، ماشینت داغون شد!" },
+  { t: "«چه خوشگل شدی!»", e: "💅", c: "#f472b6", hit: "زودپز تو صورتت ترکید!" },
+  { t: "«چه خونه‌ی قشنگی!»", e: "🏠", c: "#fb923c", hit: "لوله‌ی گاز ترکید، خونه‌ت از بین رفت!" },
+  { t: "«چقدر خوشحالی!»", e: "😁", c: "#facc15", hit: "دو ماهه نشستی گریه می‌کنی و نمی‌دونی چرا!" },
+  { t: "«کار و کاسبیت خوب شده!»", e: "💰", c: "#4ade80", hit: "ورشکست شدی، حکم جلبت اومد!" },
+  { t: "«چه موهای قشنگی!»", e: "💇", c: "#a78bfa", hit: "کله‌ت مثل توپ تاس شد، یه دونه مو هم نموند!" },
+  { t: "«چه چشای قشنگی!»", e: "👀", c: "#60a5fa", hit: "سماور تو صورتت ترکید!" },
+  { t: "«ورزش می‌کنی؟!»", e: "🏋️", c: "#34d399", hit: "سه ماهه مثل سگ مریض تو خونه افتادی!" },
+];
+const DARK = [
+  { t: "شاش تو قرمه‌سبزی", e: "🍲", c: "#a3e635", hit: "شاش رو تو قرمه‌سبزی به خوردت دادن!" },
+  { t: "شاش تو چایی", e: "🍵", c: "#bef264", hit: "چایی‌ت طلسم‌دار بود!" },
+  { t: "آب پشکل پشت در", e: "💩", c: "#a16207", hit: "آب پشکل به در خونه‌ت پاشیدن!" },
+  { t: "خاک مرده سر راهت", e: "🪦", c: "#78716c", hit: "خاک مرده ریختن سر راه کاسبیت!" },
+  { t: "طلسم لای مبل", e: "🛋️", c: "#c084fc", hit: "طلسم رو لای مبل خونه‌تون جا کردن!" },
+  { t: "طلسم تو ماشین", e: "📿", c: "#e879f9", hit: "طلسم تو ماشینت قایم کردن!" },
+  { t: "جن‌فرستی", e: "👻", c: "#94a3b8", hit: "به ساحر پول دادن و اجنه وارد خونه‌ت شدن!" },
+  { t: "طلسم عشق اجباری", e: "💘", c: "#fb7185", hit: "عاشقت کردن که بدبختت کنن!" },
+  { t: "طلسم قبرستونی", e: "⚰️", c: "#57534e", hit: "طلسمت رو تو قبرستون چال کردن!" },
+  { t: "طلسم افسردگی", e: "🌧️", c: "#64748b", hit: "با طلسم افسرده‌ت کردن!" },
+];
+const FUNNY = [
+  { t: "طلسم وصل نشدن وای‌فای", e: "📶", c: "#38bdf8", hit: "وای‌فای تا ابد وصل نشد!" },
+  { t: "طلسم گیر کردن تو ترافیک", e: "🚦", c: "#fbbf24", hit: "سه ساعت تو ترافیک موندی!" },
+  { t: "طلسم دیر رسیدن سر کار", e: "⏰", c: "#f97316", hit: "دیر رسیدی، اخراج شدی!" },
+  { t: "طلسم ته‌گرفتن قرمه‌سبزی", e: "🔥", c: "#ef4444", hit: "قرمه‌سبزی‌ای که با عشق پختی ته گرفت!" },
+  { t: "طلسم خرید اینترنتی", e: "📦", c: "#a78bfa", hit: "خرید اینترنتی‌ت رفت تو پاچه‌ت!" },
+  { t: "طلسم آرایشگاه", e: "💈", c: "#f472b6", hit: "موهات تو آرایشگاه خراب شد!" },
+  { t: "طلسم پاره شدن خشتک", e: "👖", c: "#60a5fa", hit: "خشتکت تو مهمونی رسمی جر خورد!" },
+];
+
+// ---- the cast. who = how the game-over line names them; pool = which spells they throw ----
+const fam = (n) => `${n} جونت`;
 const CAST = [
-  { name: "عمو", kill: ["عمو جونت نابودت کرد!", "عمو جونت با رمال محل ترتیبتو داد!", "عموت برات یه دارک سنگین زد!", "عمو جونت سر سفره‌ی عید برات چشم‌زخم پیچید!"], body: "#8d6e63", skin: "#f1c27d", mustache: true, belly: 1.25, hat: "cap", line: "عمو جان پشتته!" },
-  { name: "عمه", kill: ["عمه جونت نابودت کرد!", "عمه جونت با رمال محل ترتیبتو داد!", "عمه جونت موهاتو برد پیش دعانویس!", "عمه جونت از حسودی تو فال قهوه‌ات کرم ریخت!"], body: "#212121", skin: "#e0ac69", chador: true, belly: 1.3, line: "از دست من در نمیری!" },
-  { name: "خاله", kill: ["خاله جونت نابودت کرد!", "خاله جونت با رمال محل ترتیبتو داد!", "دخترخالت با یه جادوگر پارت کرد!", "خاله جونت تو آش نذری‌ت ورد خوند!"], body: "#e91e63", skin: "#ffcc99", scarf: "#ff9800", belly: 1.2, line: "قربونت برم، بگیر!" },
-  { name: "بقال محل", kill: ["بقال محل به‌جای نسیه، طلسمت کرد!","بقال محل تو پفکت طلسم قایم کرده بود!","بقال محل باقی پولتو با طلسم داد!"], body: "#4caf50", skin: "#d2a679", mustache: true, apron: true, belly: 1.4, line: "نسیه نداریم!" },
-  { name: "رفیق", kill: ["اینی که فکر می‌کردی دوستته، داشت برات تو قبرستون سحر سفلی می‌زد!","رفیقت عکستو داد دست جادوگر محل!","داداش‌جونی‌ت پشت سرت شمع سیاه روشن کرد!"], body: "#2196f3", skin: "#ffdbac", hat: "beanie", belly: 1.0, line: "داداش خودم بودم!" },
-  { name: "دوست دختر رفیق", kill: ["دوست‌دخترِ رفیقت از اول چشم دیدنت رو نداشت!", "دوست دخترت شاشو تو قرمه سبزی به خوردت داد!", "دوست‌دخترِ رفیقت با یه آینه‌ی جادویی چشمتو زد!"], body: "#ba68c8", skin: "#ffe0bd", scarf: "#f48fb1", lips: true, belly: 1.0, line: "بهم نگفتی!" },
-  { name: "همکلاسی", kill: ["همکلاسی‌ای که ازش جزوه می‌گرفتی، طلسمت کرد!","همکلاسی‌ت تو جزوه‌ت طلسم لای ورق گذاشت!"], body: "#ffb300", skin: "#f1c27d", glasses: true, belly: 1.1, line: "جزوه نمی‌دم!" },
-  { name: "همسایه", kill: ["همسایه از پشت دیوار طلسمت کرد!","همسایه آب‌پاش طلسمی رو گرفت سمت پنجره‌ت!","همسایه زیر پادری‌ت تخم‌مرغ طلسم‌شده گذاشت!", "پسر همسایه با شاش سگ تورو عاشق خودش کرد که بدبختت کنه!"], body: "#607d8b", skin: "#e0ac69", scarf: "#795548", belly: 1.35, line: "صدای ماشینت!" },
-  { name: "غریبه", kill: ["یه غریبه از سر حسادت صدتا جن وارد زندگیت کرد!"], body: "#37474f", skin: "#d7ccc8", hat: "cap", glasses: true, belly: 1.0, line: "منو یادت نیست؟" },
+  { name: "عمو", who: fam("عمو"), pool: JEALOUS, body: "#8d6e63", skin: "#f1c27d", mustache: true, belly: 1.25, hat: "cap", line: "عمو جان پشتته!",
+    extra: ["عمو جونت با رمال محل ترتیبتو داد!", "عموت برات یه دارک سنگین زد!"] },
+  { name: "عمه", who: fam("عمه"), pool: JEALOUS, body: "#212121", skin: "#e0ac69", chador: true, belly: 1.3, line: "ماشالا، ماشالا!",
+    extra: ["عمه جونت موهاتو برد پیش دعانویس!"] },
+  { name: "همکلاسی", who: "همکلاسیت", pool: FUNNY, body: "#ffb300", skin: "#f1c27d", glasses: true, belly: 1.1, line: "جزوه نمی‌دم!" },
+  // stage 2
+  { name: "همسایه", who: "همسایه‌ت", pool: DARK, body: "#607d8b", skin: "#e0ac69", scarf: "#795548", belly: 1.35, line: "صدای ماشینت!",
+    extra: ["پسر همسایه با شاش سگ تورو عاشق خودش کرد که بدبختت کنه!"] },
+  { name: "بقال محل", who: "بقال محل", pool: FUNNY, body: "#4caf50", skin: "#d2a679", mustache: true, apron: true, belly: 1.4, line: "نسیه نداریم!" },
+  { name: "دخترخاله", who: fam("دخترخاله"), pool: JEALOUS, body: "#e91e63", skin: "#ffcc99", scarf: "#ff9800", lips: true, belly: 1.05, line: "قربونت برم!",
+    extra: ["دخترخالت با یه جادوگر پارت کرد!"] },
+  { name: "غریبه", who: "یه غریبه", pool: DARK, body: "#37474f", skin: "#d7ccc8", hat: "cap", glasses: true, belly: 1.0, line: "منو یادت نیست؟",
+    extra: ["یه غریبه از سر حسادت صدتا جن وارد زندگیت کرد!"] },
+  // stage 3: the wedding, everyone's here
+  { name: "رفیق", who: "اونی که فکر می‌کردی رفیقته", pool: DARK, body: "#2196f3", skin: "#ffdbac", hat: "beanie", belly: 1.0, line: "داداش خودم بودم!" },
+  { name: "دوست‌دختر رفیق", who: "دوست‌دختر رفیقت", pool: DARK, body: "#ba68c8", skin: "#ffe0bd", scarf: "#f48fb1", lips: true, belly: 1.0, line: "بهم نگفتی!" },
+  { name: "مادرزن", who: "مادرزنت", pool: DARK, body: "#5b21b6", skin: "#e0ac69", chador: true, belly: 1.45, line: "دخترم حیف شد!" },
+  { name: "مادرشوهر", who: "مادرشوهرت", pool: JEALOUS, body: "#9f1239", skin: "#f1c27d", scarf: "#be185d", belly: 1.4, line: "پسرم لاغر شده!" },
+  { name: "خواهرشوهر", who: "خواهرشوهرت", pool: JEALOUS, body: "#0f766e", skin: "#ffdbac", scarf: "#14b8a6", lips: true, belly: 1.05, line: "لباست تکراریه!" },
+  { name: "پدرزن", who: "پدرزنت", pool: FUNNY, body: "#334155", skin: "#d2a679", mustache: true, glasses: true, belly: 1.35, line: "جهیزیه کو؟" },
+  { name: "دختردایی", who: fam("دختردایی"), pool: JEALOUS, body: "#f59e0b", skin: "#ffe0bd", scarf: "#fde047", lips: true, belly: 1.0, line: "چه خبرا؟!" },
+  { name: "حسود محله", who: "حسود محله", pool: DARK, body: "#166534", skin: "#d7ccc8", belly: 1.2, line: "تو چرا اینقدر خوشی؟" },
+  { name: "اونی که ازت متنفره", who: "اونی که ازت متنفره", pool: DARK, body: "#7f1d1d", skin: "#e0ac69", hat: "beanie", belly: 1.1, line: "ازت بدم میاد!" },
 ];
-const SPELLS = [
-  { t: "طلسم مرگِ شارژ گوشی", e: "🪫", c: "#b0bec5" },
-  { t: "طلسم گرفتاریِ ترافیک", e: "🚗", c: "#90a4ae" },
-  { t: "طلسم غمِ جمعه عصر", e: "😢", c: "#64b5f6" },
-  { t: "طلسم جدایی از وای‌فای", e: "📵", c: "#f06292" },
-  { t: "طلسم قسط آخر ماه", e: "💸", c: "#81c784" },
-  { t: "چشم‌زخمِ عمه", e: "🧿", c: "#4fc3f7" },
-  { t: "طلسم «کی ازدواج می‌کنی؟»", e: "💍", c: "#fbbf24" },
-  { t: "طلسم «نمره‌ت چند شد؟»", e: "📝", c: "#a78bfa" },
+const STAGES = [
+  { title: "مرحله ۱: یه روز معمولی", cast: 3, time: 28, every: 1150, speed: 2.8, multi: 1, crowd: 0.04,
+    intro: ["فعلاً فقط عمو، عمه و همکلاسی‌ت هستن…", "از طلسم‌هاشون جاخالی بده!"] },
+  { title: "مرحله ۲: فک و فامیل دور هم جمع شدن", cast: 7, time: 32, every: 900, speed: 3.5, multi: 1, crowd: 0.09,
+    intro: ["حالا همسایه، بقال محل، دخترخاله و یه غریبه هم اضافه شدن!", "منتظر طلسم‌های سنگین‌تر و قوی‌تر باش…", "آماده‌ای؟"] },
+  { title: "مرحله ۳: عروسی پسرخاله", cast: CAST.length, time: 38, every: 950, speed: 4.1, multi: 2, crowd: 0.16,
+    intro: ["عروسی پسرخاله‌ست! همه اومدن…", "مادرزن، مادرشوهر، رفیق، حسود محله و…", "اینجا دیگه می‌خوان پارتت کنن با طلسم‌های مختلف.", "مواظب خودت باش!"] },
 ];
-const LEVELS = [
-  { title: "مرحله ۱: مهمونی خونه‌ی مادربزرگ", time: 30, every: 1150, speed: 2.8, multi: 1 },
-  { title: "مرحله ۲: کل فامیل جمع شدن!", time: 35, every: 880, speed: 3.6, multi: 1 },
-  { title: "مرحله ۳: عروسی پسرخاله 😱", time: 40, every: 900, speed: 4.2, multi: 2 },
-];
+
+// ---- sound: all synthesized with WebAudio, no files ----
+let AC = null, crowdGain = null, musicOn = false;
+function audio() {
+  if (AC) return; try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch { return; }
+  // crowd murmur: band-passed noise that swells as more people arrive
+  const len = AC.sampleRate * 2, buf = AC.createBuffer(1, len, AC.sampleRate), d = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+  const src = AC.createBufferSource(); src.buffer = buf; src.loop = true;
+  const bp = AC.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = 500; bp.Q.value = 0.8;
+  crowdGain = AC.createGain(); crowdGain.gain.value = 0; src.connect(bp).connect(crowdGain).connect(AC.destination); src.start();
+  musicOn = true; music();
+}
+function tone(f, t, dur, type = "square", vol = 0.06, slide = 0) {
+  if (!AC) return; const o = AC.createOscillator(), v = AC.createGain(); o.type = type; o.frequency.setValueAtTime(f, t);
+  if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(30, f + slide), t + dur);
+  v.gain.setValueAtTime(vol, t); v.gain.exponentialRampToValueAtTime(0.0001, t + dur); o.connect(v).connect(AC.destination); o.start(t); o.stop(t + dur + 0.02);
+}
+// a little bouncy loop in a Persian-ish scale (Shur-like), faster on later stages
+const MEL = [293.7, 311.1, 349.2, 392, 349.2, 311.1, 293.7, 261.6];
+let beat = 0;
+function music() {
+  if (!AC || !musicOn) return;
+  const t = AC.currentTime, step = state === "play" ? 0.24 - lvl * 0.03 : 0.32;
+  if (state === "play" || state === "title" || state === "intro") {
+    tone(MEL[beat % 8] * (beat % 16 < 8 ? 1 : 1.5), t, step * 0.9, "triangle", 0.045);
+    if (beat % 2 === 0) tone(110, t, 0.12, "sine", 0.12, -60); // doum
+    if (beat % 4 === 3) tone(220, t, 0.05, "square", 0.03); // tak
+  }
+  beat++; setTimeout(music, step * 1000);
+}
+const sfx = {
+  throw: () => AC && tone(700 + Math.random() * 400, AC.currentTime, 0.18, "sine", 0.03, -500),
+  hit: () => { if (!AC) return; const t = AC.currentTime; tone(180, t, 0.35, "sawtooth", 0.09, 400); tone(90, t + 0.05, 0.3, "square", 0.06, -40); }, // boing + buzz
+  dodge: () => AC && tone(1200, AC.currentTime, 0.06, "sine", 0.015),
+  lose: () => { if (!AC) return; const t = AC.currentTime; [392, 370, 349, 311].forEach((f, i) => tone(f, t + i * 0.35, i === 3 ? 1 : 0.32, "sawtooth", 0.07, i === 3 ? -80 : 0)); },
+  win: () => { if (!AC) return; const t = AC.currentTime; [523, 659, 784, 1047, 1319].forEach((f, i) => tone(f, t + i * 0.12, 0.5, "triangle", 0.07)); },
+};
 
 // a chubby sticker character with a white outline
 function drawChar(c, x, y, s, t, label) {
@@ -77,17 +156,14 @@ function drawChar(c, x, y, s, t, label) {
   g.save(); g.translate(x, y); g.scale(s, s);
   g.lineJoin = "round";
   const bw = 26 * c.belly;
-  // outline pass then fill pass (sticker look)
   for (const pass of [0, 1]) {
-    g.lineWidth = pass ? 0.01 : 10; g.strokeStyle = pass ? "transparent" : "#fff"; g.shadowColor = pass ? "transparent" : "#6d28d940"; g.shadowBlur = pass ? 0 : 14; g.shadowOffsetY = pass ? 0 : 5;
-    g.fillStyle = c.body;
+    g.lineWidth = pass ? 0.01 : 10; g.strokeStyle = pass ? "transparent" : "#fff"; g.shadowColor = pass ? "transparent" : "#1e0b3a55"; g.shadowBlur = pass ? 0 : 14; g.shadowOffsetY = pass ? 0 : 5;
     const wave = Math.sin(t / 180) * 0.5;
     for (const sx of [-1, 1]) { g.beginPath(); g.ellipse(sx * (bw + 2), 14, 7, 15, sx * (0.9 + (sx > 0 ? wave : 0)), 0, 7); pass ? (g.fillStyle = c.chador ? "#1a1a1a" : c.body, g.fill()) : g.stroke(); }
     for (const sx of [-1, 1]) { g.beginPath(); g.ellipse(sx * 10, 56, 10, 6, 0, 0, 7); pass ? (g.fillStyle = "#4a3b5c", g.fill()) : g.stroke(); }
-    g.fillStyle = c.body; g.beginPath(); g.ellipse(0, 26, bw, 30, 0, 0, Math.PI * 2); pass ? (g.fill(), g.stroke()) : g.stroke();
+    g.fillStyle = c.body; g.beginPath(); g.ellipse(0, 26, bw, 30, 0, 0, 7); pass ? (g.fill(), g.stroke()) : g.stroke();
     if (c.chador) { g.beginPath(); g.moveTo(-34, 55); g.quadraticCurveTo(0, -48, 34, 55); g.closePath(); pass ? (g.fillStyle = "#1a1a1a", g.fill(), g.stroke()) : g.stroke(); }
-    g.fillStyle = c.skin;
-    g.beginPath(); g.arc(0, -10, 20, 0, Math.PI * 2); pass ? (g.fill(), g.stroke()) : g.stroke();
+    g.fillStyle = c.skin; g.beginPath(); g.arc(0, -10, 20, 0, 7); pass ? (g.fill(), g.stroke()) : g.stroke();
   }
   shade3d(bw);
   g.fillStyle = "#ffffff59"; g.beginPath(); g.ellipse(-bw * 0.4, 12, bw * 0.22, 9, -0.5, 0, 7); g.fill();
@@ -96,20 +172,16 @@ function drawChar(c, x, y, s, t, label) {
   if (c.scarf) { g.fillStyle = c.scarf; g.beginPath(); g.arc(0, -12, 23, Math.PI, 0); g.lineTo(18, 8); g.quadraticCurveTo(0, 2, -18, 8); g.closePath(); g.fill(); g.beginPath(); g.moveTo(-6, 6); g.lineTo(-14, 26); g.lineTo(2, 10); g.fill(); }
   if (c.chador) { g.fillStyle = "#1a1a1a"; g.beginPath(); g.arc(0, -12, 24, Math.PI * 1.05, -0.05 * Math.PI); g.lineTo(22, 4); g.lineTo(-22, 4); g.fill(); }
   if (c.hat === "cap") { g.fillStyle = "#5d4037"; g.fillRect(-18, -34, 36, 10); g.fillRect(-26, -26, 22, 5); }
-  if (c.hat === "beanie") { g.fillStyle = "#e53935"; g.beginPath(); g.arc(0, -22, 19, Math.PI, 0); g.fill(); g.beginPath(); g.arc(0, -42, 5, 0, Math.PI * 2); g.fill(); }
-  // face: big googly eyes, rosy cheeks, silly mouth
-  for (const ex of [-7, 7]) { g.fillStyle = "#fff"; g.beginPath(); g.arc(ex, -13, 6, 0, Math.PI * 2); g.fill(); g.fillStyle = "#222"; g.beginPath(); g.arc(ex + Math.sin(t / 300) * 2, -12, 3, 0, Math.PI * 2); g.fill(); }
+  if (c.hat === "beanie") { g.fillStyle = "#e53935"; g.beginPath(); g.arc(0, -22, 19, Math.PI, 0); g.fill(); g.beginPath(); g.arc(0, -42, 5, 0, 7); g.fill(); }
+  for (const ex of [-7, 7]) { g.fillStyle = "#fff"; g.beginPath(); g.arc(ex, -13, 6, 0, 7); g.fill(); g.fillStyle = "#222"; g.beginPath(); g.arc(ex + Math.sin(t / 300) * 2, -12, 3, 0, 7); g.fill(); }
   g.fillStyle = "#ff8a8088"; g.beginPath(); g.arc(-13, -4, 4, 0, 7); g.arc(13, -4, 4, 0, 7); g.fill();
   if (c.glasses) { g.strokeStyle = "#222"; g.lineWidth = 2; g.strokeRect(-14, -19, 12, 11); g.strokeRect(2, -19, 12, 11); }
   if (c.mustache) { g.fillStyle = "#3e2723"; g.beginPath(); g.ellipse(-5, -2, 7, 3, 0.3, 0, 7); g.ellipse(5, -2, 7, 3, -0.3, 0, 7); g.fill(); }
   g.strokeStyle = c.lips ? "#d81b60" : "#3e2723"; g.lineWidth = c.lips ? 4 : 2.5;
   g.beginPath(); g.arc(0, 0, 6, 0.15 * Math.PI, 0.85 * Math.PI); g.stroke();
   g.restore();
-  if (label) {
-    pill(label, x, y + 74 * s, 13);
-  }
+  if (label) pill(label, x, y + 74 * s, 12);
 }
-
 function shade3d(bw) {
   g.save(); g.globalCompositeOperation = "source-atop";
   for (const [cx, cy, rx, ry] of [[0, 26, bw, 30], [0, -10, 20, 20]]) {
@@ -125,7 +197,7 @@ function drawPlayer(x, y, t, hurt) {
   if (hurt && Math.floor(t / 80) % 2) g.globalAlpha = 0.4;
   g.lineJoin = "round";
   for (const pass of [0, 1]) {
-    g.lineWidth = pass ? 0.01 : 10; g.strokeStyle = pass ? "transparent" : "#fff"; g.shadowColor = pass ? "transparent" : "#6d28d940"; g.shadowBlur = pass ? 0 : 14; g.shadowOffsetY = pass ? 0 : 5;
+    g.lineWidth = pass ? 0.01 : 10; g.strokeStyle = pass ? "transparent" : "#fff"; g.shadowColor = pass ? "transparent" : "#1e0b3a55"; g.shadowBlur = pass ? 0 : 14; g.shadowOffsetY = pass ? 0 : 5;
     g.fillStyle = "#7c4dff"; g.beginPath(); g.ellipse(0, 26, 24, 28, 0, 0, 7); pass ? (g.fill(), g.stroke()) : g.stroke();
     g.fillStyle = "#ffe0bd"; g.beginPath(); g.arc(0, -10, 20, 0, 7); pass ? (g.fill(), g.stroke()) : g.stroke();
   }
@@ -134,167 +206,208 @@ function drawPlayer(x, y, t, hurt) {
   for (const ex of [-7, 7]) { g.fillStyle = "#fff"; g.beginPath(); g.arc(ex, -11, 5, 0, 7); g.fill(); g.fillStyle = "#222"; g.beginPath(); g.arc(ex, -10, 2.5, 0, 7); g.fill(); }
   g.strokeStyle = "#3e2723"; g.lineWidth = 2.5; g.beginPath(); g.arc(0, -2, 6, 0.1 * Math.PI, 0.9 * Math.PI); g.stroke();
   g.restore();
-  pill(PLAYER, x, y - 46 * S, 14);
+  // "تو" over the head (bouncing arrow), the player's own name under the feet
+  const b = Math.sin(t / 200) * 3 * S;
+  pill("تو", x, y - 48 * S + b, 15, false, "#f59e0b", "#fbbf24");
+  g.fillStyle = "#fbbf24"; g.beginPath(); g.moveTo(x - 7 * S, y - 33 * S + b); g.lineTo(x + 7 * S, y - 33 * S + b); g.lineTo(x, y - 25 * S + b); g.fill();
+  pill(PLAYER, x, y + 76 * S, 12);
 }
 
-// Nimah: a floating figure in a glowing golden cloak, hood up, face lost in shadow
+// Nimah: black cloak, a golden faceless face, and a golden halo pouring out of the cloak
 function drawNimah(x, y, t, s) {
   g.save(); g.translate(x, y + Math.sin(t / 400) * 6 * s); g.scale(s, s);
-  const glow = g.createRadialGradient(0, 0, 10, 0, 0, 140);
-  glow.addColorStop(0, "#ffe08299"); glow.addColorStop(1, "#ffe08200");
-  g.fillStyle = glow; g.beginPath(); g.arc(0, 0, 140, 0, 7); g.fill();
-  const cloak = g.createLinearGradient(0, -80, 0, 90);
-  cloak.addColorStop(0, "#fff3c4"); cloak.addColorStop(0.5, "#fbbf24"); cloak.addColorStop(1, "#b7791f");
-  g.fillStyle = cloak; g.strokeStyle = "#fff"; g.lineWidth = 6;
-  g.beginPath(); g.moveTo(0, -78); g.quadraticCurveTo(46, -60, 42, -18); g.quadraticCurveTo(70, 40, 62, 92);
-  g.quadraticCurveTo(0, 80, -62, 92); g.quadraticCurveTo(-70, 40, -42, -18); g.quadraticCurveTo(-46, -60, 0, -78); g.closePath(); g.fill(); g.stroke();
-  g.fillStyle = "#120720"; g.beginPath(); g.ellipse(0, -30, 22, 28, 0, 0, 7); g.fill(); // the hood's darkness: no face
-  for (const ex of [-8, 8]) { g.fillStyle = "#fff59d"; g.beginPath(); g.arc(ex, -32, 2.6, 0, 7); g.fill(); }
-  for (let i = 0; i < 10; i++) { const a = t / 600 + i; g.fillStyle = "#fff"; g.globalAlpha = 0.5 + 0.5 * Math.sin(t / 200 + i); g.fillRect(Math.cos(a) * 90, Math.sin(a) * 70, 3, 3); }
+  const glow = g.createRadialGradient(0, 0, 20, 0, 0, 170);
+  glow.addColorStop(0, "#fde68acc"); glow.addColorStop(0.5, "#fbbf2455"); glow.addColorStop(1, "#fbbf2400");
+  g.fillStyle = glow; g.beginPath(); g.arc(0, 0, 170, 0, 7); g.fill();
+  for (let i = 0; i < 14; i++) { const a = (i / 14) * Math.PI * 2 + t / 1500; g.strokeStyle = `rgba(253,230,138,${0.25 + 0.2 * Math.sin(t / 300 + i)})`; g.lineWidth = 3;
+    g.beginPath(); g.moveTo(Math.cos(a) * 80, Math.sin(a) * 90); g.lineTo(Math.cos(a) * 150, Math.sin(a) * 160); g.stroke(); }
+  g.shadowColor = "#fbbf24"; g.shadowBlur = 30;
+  g.fillStyle = "#0b0612"; g.strokeStyle = "#fbbf24"; g.lineWidth = 5;
+  g.beginPath(); g.moveTo(0, -80); g.quadraticCurveTo(48, -62, 44, -18); g.quadraticCurveTo(72, 40, 64, 94);
+  g.quadraticCurveTo(0, 82, -64, 94); g.quadraticCurveTo(-72, 40, -44, -18); g.quadraticCurveTo(-48, -62, 0, -80); g.closePath(); g.fill(); g.stroke();
+  g.shadowBlur = 0;
+  const face = g.createRadialGradient(-6, -40, 2, 0, -30, 26); face.addColorStop(0, "#fff7cc"); face.addColorStop(0.6, "#fbbf24"); face.addColorStop(1, "#b45309");
+  g.fillStyle = face; g.shadowColor = "#fde68a"; g.shadowBlur = 25; g.beginPath(); g.ellipse(0, -30, 20, 26, 0, 0, 7); g.fill(); g.shadowBlur = 0;
+  g.strokeStyle = "#fbbf2488"; g.lineWidth = 2; g.beginPath(); g.moveTo(0, -10); g.lineTo(0, 90); g.stroke(); // cloak seam
+  for (let i = 0; i < 12; i++) { const a = t / 600 + i; g.fillStyle = "#fde68a"; g.globalAlpha = 0.5 + 0.5 * Math.sin(t / 200 + i); g.fillRect(Math.cos(a) * 100, Math.sin(a) * 80, 3, 3); }
   g.restore();
 }
-
+// the golden key: its round bow is Nimah's mandala seal
 function drawKey(x, y, t, s) {
-  g.save(); g.translate(x, y); g.rotate(Math.sin(t / 300) * 0.3); g.scale(s, s);
+  g.save(); g.translate(x, y); g.rotate(Math.sin(t / 300) * 0.25); g.scale(s, s);
   g.shadowColor = "#ffd54f"; g.shadowBlur = 25;
-  g.strokeStyle = "#ffca28"; g.fillStyle = "#ffca28"; g.lineWidth = 9;
-  g.beginPath(); g.arc(-26, 0, 16, 0, 7); g.stroke();
-  g.fillRect(-10, -4, 52, 8); g.fillRect(28, 4, 7, 14); g.fillRect(40, 4, 7, 10);
+  g.fillStyle = "#fbbf24"; g.fillRect(-4, -5, 78, 10); g.fillRect(52, 5, 8, 16); g.fillRect(66, 5, 8, 11);
+  g.beginPath(); g.arc(-30, 0, 34, 0, 7); g.fill(); g.shadowBlur = 0;
+  g.save(); g.beginPath(); g.arc(-30, 0, 29, 0, 7); g.clip(); g.translate(-30, 0); g.rotate(t / 1500);
+  if (SEAL.complete && SEAL.naturalWidth) g.drawImage(SEAL, -29, -29, 58, 58); g.restore();
   g.restore();
 }
 
 // ---- game state ----
-let killer = ["", ""], state = "title", lvl = 0, tLevel = 0, lives = 3, score = 0, px = 0, vx = 0, spells = [], bubbles = [], lastSpawn = 0, hurtUntil = 0, endT = 0, sent = false;
+let state = "title", lvl = 0, tLevel = 0, lives = 3, score = 0, px = 0, vx = 0, spells = [], bubbles = [], lastSpawn = 0, hurtUntil = 0, endT = 0, sent = false;
+let killer = ["", "", ""], glitchUntil = 0, introT = 0, lostT = 0;
 const keys = { l: false, r: false };
-const throwers = () => CAST.map((c, i) => ({ c, x: W * (0.08 + (0.84 * i) / (CAST.length - 1)), y: (64 + (i % 2) * 44) * S }));
-
-function startGame() { state = "play"; lvl = 0; lives = 3; score = 0; spells = []; bubbles = []; px = W / 2; tLevel = performance.now(); banner = LEVELS[0].title; bannerUntil = tLevel + 2200; }
-let banner = "", bannerUntil = 0;
+const active = () => CAST.slice(0, STAGES[lvl].cast);
+// two rows across the top; more people = smaller
+function throwers() {
+  const list = state === "title" ? CAST.slice(0, 7) : active(), n = list.length, perRow = Math.ceil(n / 2);
+  return list.map((c, i) => { const row = n > 4 ? i % 2 : 0, col = n > 4 ? Math.floor(i / 2) : i, cols = n > 4 ? perRow : n;
+    return { c, x: W * (0.1 + (0.8 * (col + (row ? 0.5 : 0))) / Math.max(1, cols - (row ? 0 : 1) || 1)), y: (58 + row * 70) * S, s: n > 9 ? 0.5 : n > 4 ? 0.6 : 0.72 }; })
+    .map((p) => ({ ...p, x: Math.min(W * 0.92, p.x) }));
+}
+function startGame() { audio(); lvl = 0; lives = 3; score = 0; showIntro(); }
+function showIntro() { state = "intro"; introT = performance.now(); spells = []; bubbles = []; px = W / 2; }
 
 function spawn(now) {
-  const L = LEVELS[lvl];
-  const ts = throwers();
+  const L = STAGES[lvl], ts = throwers();
   for (let k = 0; k < L.multi; k++) {
-    const th = ts[Math.floor(Math.random() * ts.length)];
-    const sp = SPELLS[Math.floor(Math.random() * SPELLS.length)];
+    const th = pick(ts), sp = pick(Math.random() < 0.25 ? FUNNY : th.c.pool);
     const tx = px + (Math.random() - 0.5) * 160 * S, ty = H - 120 * S;
     const d = Math.hypot(tx - th.x, ty - th.y), v = L.speed * S * (0.85 + Math.random() * 0.3);
-    spells.push({ x: th.x, y: th.y + 30 * S, vx: ((tx - th.x) / d) * v, vy: ((ty - th.y) / d) * v, sp, who: [].concat(th.c.kill)[Math.floor(Math.random() * [].concat(th.c.kill).length)], r: 20 * S, rot: 0 });
-    if (Math.random() < 0.35) bubbles.push({ x: th.x, y: th.y - 10 * S, text: th.c.line, until: now + 1300 });
+    spells.push({ x: th.x, y: th.y + 30 * S, vx: ((tx - th.x) / d) * v, vy: ((ty - th.y) / d) * v, sp, c: th.c, r: 20 * S, rot: 0 });
+    if (Math.random() < 0.35) bubbles.push({ x: th.x, y: th.y - 12 * S, text: th.c.line, until: now + 1300 });
+    sfx.throw();
   }
 }
 
 function update(now, dt) {
+  if (crowdGain) crowdGain.gain.value = state === "play" || state === "intro" ? STAGES[lvl].crowd : state === "title" ? 0.02 : 0;
   if (state !== "play") return;
-  const L = LEVELS[lvl];
-  const speed = 6.5 * S;
+  const L = STAGES[lvl], speed = 6.5 * S;
   vx = keys.l ? -speed : keys.r ? speed : drag !== null ? Math.max(-speed, Math.min(speed, (drag - px) * 0.25)) : 0;
   px = Math.max(30 * S, Math.min(W - 30 * S, px + vx * dt));
   if (now - lastSpawn > L.every) { spawn(now); lastSpawn = now; }
   const py = H - 130 * S;
   for (const s of spells) { s.x += s.vx * dt; s.y += s.vy * dt; s.rot += 0.08 * dt;
     if (!s.dead && now > hurtUntil && Math.hypot(s.x - px, s.y - py) < s.r + 26 * S) {
-      s.dead = true; lives--; hurtUntil = now + 1200; if (tg) tg.HapticFeedback && tg.HapticFeedback.impactOccurred("heavy");
-      bubbles.push({ x: px, y: py - 70 * S, text: `آخ! ${s.sp.t} خوردم 😵`, until: now + 1200 });
-      if (lives <= 0) { state = "over"; endT = now; killer = [s.who, `با «${s.sp.t}» 😵`]; }
+      s.dead = true; lives--; hurtUntil = now + 1200; glitchUntil = now + 450; sfx.hit();
+      if (tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred("heavy");
+      bubbles.push({ x: px, y: py - 90 * S, text: s.sp.hit, until: now + 1500 });
+      if (lives <= 0) {
+        state = "over"; endT = now; sfx.lose();
+        const top = s.c.extra && Math.random() < 0.35 ? pick(s.c.extra) : `${s.c.who} با «${s.sp.t}»`;
+        killer = [top, s.sp.hit, s.sp.e];
+      }
     }
-    if (!s.dead && s.y > H + 40) { s.dead = true; score += 10; }
+    if (!s.dead && s.y > H + 40) { s.dead = true; score += 10; sfx.dodge(); }
   }
-  spells = spells.filter((s) => !s.dead || s.y < H + 40) .filter((s) => !(s.dead && s.y > H));
   spells = spells.filter((s) => !s.dead);
   bubbles = bubbles.filter((b) => b.until > now);
   if ((now - tLevel) / 1000 > L.time) {
-    if (lvl < LEVELS.length - 1) { lvl++; tLevel = now; spells = []; banner = LEVELS[lvl].title; bannerUntil = now + 2200; score += 100 * lvl; }
-    else { state = "win"; endT = now; spells = []; score += 500; }
+    score += 100 * (lvl + 1);
+    if (lvl < STAGES.length - 1) { lvl++; showIntro(); } else { state = "win"; endT = now; spells = []; score += 500; sfx.win(); }
   }
 }
 
 function bg(now) {
   const grd = g.createLinearGradient(0, 0, 0, H);
-  grd.addColorStop(0, "#3b1a78"); grd.addColorStop(0.55, "#7c3aed"); grd.addColorStop(1, "#f0abfc");
+  const wedding = state !== "title" && lvl === 2;
+  grd.addColorStop(0, wedding ? "#4a044e" : "#3b1a78"); grd.addColorStop(0.55, wedding ? "#be185d" : "#7c3aed"); grd.addColorStop(1, "#f0abfc");
   g.fillStyle = grd; g.fillRect(0, 0, W, H);
   for (const [bx, by, br, bc] of [[0.15, 0.25, 0.35, "#a78bfa"], [0.85, 0.4, 0.4, "#f472b6"], [0.3, 0.9, 0.45, "#fbcfe8"], [0.9, 0.1, 0.3, "#60a5fa"]]) {
     const x = W * bx + Math.sin(now / 3000 + bx * 9) * 20, y = H * by, r = Math.max(W, H) * br;
     const rg = g.createRadialGradient(x, y, 0, x, y, r); rg.addColorStop(0, bc + "99"); rg.addColorStop(1, bc + "00"); g.fillStyle = rg; g.fillRect(0, 0, W, H); }
-  // the road ahead scrolls, so it feels like walking forward
+  if (wedding) for (let i = 0; i < 24; i++) { g.fillStyle = ["#fde68a", "#f9a8d4", "#a7f3d0", "#fff"][i % 4]; g.fillRect((i * 83 + now / 9) % W, (i * 57 + now / 5) % H, 4 * S, 7 * S); } // confetti
   const off = (now / 12) % (60 * S);
   g.strokeStyle = "#ffffff40"; g.lineWidth = 2;
   for (let y = H * 0.25 + off; y < H; y += 60 * S) { const k = (y - H * 0.25) / (H * 0.75); g.beginPath(); g.moveTo(W / 2 - W * 0.5 * k, y); g.lineTo(W / 2 + W * 0.5 * k, y); g.stroke(); }
   for (let i = 0; i < 18; i++) { g.globalAlpha = 0.35 + 0.35 * Math.sin(now / 600 + i); g.font = `${Math.round((10 + (i % 3) * 6) * S)}px sans-serif`; g.fillStyle = i % 3 ? "#ffffff" : "#fde68a"; g.textAlign = "center"; g.fillText(i % 2 ? "✦" : "✧", (i * 97 + 30) % W, (i * 131) % H); } g.globalAlpha = 1;
 }
 
-function text(t, x, y, size, color = "#fff", w = 900) { if (g !== G0) return later(() => text(t, x, y, size, color, w));
+function text(t, x, y, size, color = "#fff", w = 900) {
   g.font = F(w, size); g.textAlign = "center"; g.lineJoin = "round"; g.lineWidth = 7 * S; g.strokeStyle = "#4c1d95"; g.strokeText(t, x, y); g.fillStyle = color; g.fillText(t, x, y);
 }
-// the purple name pill from the ritual stickers
-function pill(t, x, y, size, blur) { if (g !== G0) return later(() => pill(t, x, y, size, blur));
+function pill(t, x, y, size, blur, c1 = "#4c1d95", c2 = "#8b5cf6") {
   g.save(); if (blur) g.filter = "blur(3px)";
-  g.font = F(900, size); const w = g.measureText(t).width + size * 1.6 * S, h = size * 2 * S;
-  g.save(); g.shadowColor = "#6d28d955"; g.shadowBlur = 8 * S; g.shadowOffsetY = 3 * S;
-  const gr = g.createLinearGradient(x - w / 2, 0, x + w / 2, 0); gr.addColorStop(0, "#4c1d95"); gr.addColorStop(1, "#8b5cf6");
+  g.font = F(900, size); const w = Math.min(W - 8, g.measureText(t).width + size * 1.6 * S), h = size * 2 * S;
+  g.save(); g.shadowColor = "#1e0b3a55"; g.shadowBlur = 8 * S; g.shadowOffsetY = 3 * S;
+  const gr = g.createLinearGradient(x - w / 2, 0, x + w / 2, 0); gr.addColorStop(0, c1); gr.addColorStop(1, c2);
   g.fillStyle = gr; g.strokeStyle = "#fff"; g.lineWidth = 3 * S; g.beginPath(); g.roundRect(x - w / 2, y - h / 2, w, h, h / 2); g.fill(); g.stroke(); g.restore();
   g.fillStyle = "#fff"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(t, x, y + size * 0.1 * S); g.textBaseline = "alphabetic"; g.restore();
 }
-function button(label, y) { const bw = 240 * S, bh = 60 * S; later(() => { g.save(); g.shadowColor = "#6d28d966"; g.shadowBlur = 16; g.shadowOffsetY = 6;
-  const gr = g.createLinearGradient(W / 2 - bw / 2, 0, W / 2 + bw / 2, 0); gr.addColorStop(0, "#4c1d95"); gr.addColorStop(1, "#a855f7");
+function button(label, y) { const bw = 240 * S, bh = 60 * S; g.save(); g.shadowColor = "#1e0b3a66"; g.shadowBlur = 16; g.shadowOffsetY = 6;
+  const gr = g.createLinearGradient(W / 2 - bw / 2, 0, W / 2 + bw / 2, 0); gr.addColorStop(0, "#b45309"); gr.addColorStop(1, "#fbbf24");
   g.fillStyle = gr; g.strokeStyle = "#fff"; g.lineWidth = 5; g.beginPath(); g.roundRect(W / 2 - bw / 2, y - bh / 2, bw, bh, bh / 2); g.fill(); g.stroke(); g.restore();
-  g.font = F(900, 22); g.fillStyle = "#fff"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(label, W / 2, y + 2 * S); g.textBaseline = "alphabetic"; }); return { x: W / 2 - bw / 2, y: y - bh / 2, w: bw, h: bh }; }
+  g.font = F(900, 22); g.fillStyle = "#fff"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(label, W / 2, y + 2 * S); g.textBaseline = "alphabetic"; return { x: W / 2 - bw / 2, y: y - bh / 2, w: bw, h: bh }; }
+// a dark glass card with lines of text (stage intros, Nimah's speech)
+function card(lines, y, shown, hi = -1) {
+  const bw = Math.min(W - 16, 390 * S), bh = (shown * 30 + 24) * S;
+  g.save(); g.shadowColor = "#e879f9"; g.shadowBlur = 24; g.fillStyle = "#1e0b3add"; g.strokeStyle = "#f0abfc"; g.lineWidth = 3; g.beginPath(); g.roundRect(W / 2 - bw / 2, y, bw, bh, 22 * S); g.fill(); g.stroke(); g.restore();
+  g.font = F(900, 16); g.textAlign = "center"; g.textBaseline = "middle";
+  lines.slice(0, shown).forEach((l, i) => { const ly = y + (27 + i * 30) * S; g.shadowColor = i === hi ? "#fde047" : "#e879f9"; g.shadowBlur = 14; g.fillStyle = i === hi ? "#fef08a" : "#fdf4ff"; g.fillText(l, W / 2, ly); g.fillText(l, W / 2, ly); });
+  g.shadowBlur = 0; g.textBaseline = "alphabetic"; return bh;
+}
+// lives: three hearts stacked on the right edge; lost ones crack and go grey
+function hearts(now) {
+  for (let i = 0; i < 3; i++) { const y = H * 0.32 + i * 40 * S, alive = i < lives;
+    g.save(); g.globalAlpha = alive ? 1 : 0.35; g.font = `${Math.round(26 * S)}px sans-serif`; g.textAlign = "center";
+    g.fillText(alive ? "❤️" : "💔", W - 24 * S, y + (alive ? Math.sin(now / 250 + i) * 2 * S : 0)); g.restore(); }
+}
 let btn = null;
 
 function render(now) {
   bg(now);
   const ts = throwers();
   if (state === "title") {
-    ts.forEach((th, i) => drawChar(th.c, th.x, th.y + 40 * S, 0.72 * S, now + i * 300, th.c.name));
-    text("زندگیه منه،", W / 2, H * 0.36, 40, "#fff"); text("برنده!", W / 2, H * 0.36 + 50 * S, 56, "#f59e0b");
-    text("از طلسم‌های فامیل جا خالی بده 😂", W / 2, H * 0.52, 17);
-    text("و برو تا به نیماه برسی 🗝️", W / 2, H * 0.52 + 28 * S, 17);
-    drawPlayer(W / 2, H * 0.7, now, false);
-    btn = button("شروع بازی", H * 0.84);
+    ts.forEach((th, i) => drawChar(th.c, th.x, th.y + 20 * S, th.s * S, now + i * 300, th.c.name));
+    drawKey(W / 2 + 10 * S, H * 0.36, now, S * 0.8);
+    text("کلید طلایی", W / 2, H * 0.47, 42, "#fde68a"); text("نیماه", W / 2, H * 0.47 + 52 * S, 54, "#fbbf24");
+    text("از طلسم‌های فک و فامیل و محل جاخالی بده", W / 2, H * 0.6, 16);
+    text("و برو تا کلید طلایی رو از نیماه بگیری", W / 2, H * 0.6 + 26 * S, 16);
+    drawPlayer(W / 2, H * 0.73, now, false);
+    btn = button("شروع بازی", H * 0.9);
+  } else if (state === "intro") {
+    const L = STAGES[lvl];
+    ts.forEach((th, i) => drawChar(th.c, th.x, th.y, th.s * S, now + i * 300, th.c.name));
+    pill(L.title, W / 2, H * 0.33, 18, false, lvl === 2 ? "#9d174d" : "#4c1d95", lvl === 2 ? "#ec4899" : "#8b5cf6");
+    card(L.intro, H * 0.4, Math.min(L.intro.length, 1 + Math.floor((now - introT) / 700)), L.intro.length - 1);
+    drawPlayer(W / 2, H - 130 * S, now, false);
+    if (now - introT > 700 * L.intro.length) btn = button(lvl ? "آماده‌ام!" : "بزن بریم!", H * 0.78);
   } else if (state === "play") {
-    ts.forEach((th, i) => drawChar(th.c, th.x, th.y, 0.7 * S, now + i * 300, th.c.name));
+    ts.forEach((th, i) => drawChar(th.c, th.x, th.y, th.s * S, now + i * 300, th.c.name));
     for (const s of spells) { const r = s.r * (0.75 + 0.5 * Math.min(1, s.y / H)); g.save(); g.translate(s.x, s.y); g.rotate(Math.sin(s.rot) * 0.35);
-      g.shadowColor = "#a855f766"; g.shadowBlur = 12; g.shadowOffsetY = 4; g.fillStyle = "#fff"; g.beginPath(); g.roundRect(-r * 1.05, -r * 1.35, r * 2.1, r * 2.7, r * 0.45); g.fill();
-      g.shadowBlur = 0; g.shadowOffsetY = 0; g.fillStyle = "#fff4d6"; g.beginPath(); g.roundRect(-r * 0.85, -r * 1.15, r * 1.7, r * 2.3, r * 0.3); g.fill();
-      g.strokeStyle = s.sp.c; g.lineWidth = 2; g.beginPath(); g.moveTo(-r * 0.55, r * 0.75); g.lineTo(r * 0.55, r * 0.75); g.stroke();
-      g.font = `${Math.round(r * 1.1)}px sans-serif`; g.textAlign = "center"; g.fillText(s.sp.e, 0, r * 0.25);
-      g.fillStyle = "#e11d48"; g.beginPath(); g.arc(r * 0.6, -r * 0.85, r * 0.28, 0, 7); g.fill(); g.restore();
-      pill(s.sp.t, s.x, s.y + s.r * 2.2, 11, s.sp.t.includes("مرگ")); }
+      g.shadowColor = s.sp.c; g.shadowBlur = 16; g.fillStyle = "#fff"; g.beginPath(); g.arc(0, 0, r * 1.25, 0, 7); g.fill();
+      g.shadowBlur = 0; g.fillStyle = s.sp.c + "55"; g.beginPath(); g.arc(0, 0, r * 1.05, 0, 7); g.fill();
+      g.font = `${Math.round(r * 1.4)}px sans-serif`; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(s.sp.e, 0, r * 0.08); g.textBaseline = "alphabetic"; g.restore();
+      pill(s.sp.t, s.x, s.y + r * 2, 10, s.sp.t.includes("مرگ")); }
     drawPlayer(px, H - 130 * S, now, now < hurtUntil);
-    for (const b of bubbles) later(() => { g.font = F(700, 12); const w = g.measureText(b.text).width + 16; g.fillStyle = "#fff"; g.beginPath(); g.roundRect(b.x - w / 2, b.y - 18 * S, w, 24 * S, 10); g.fill(); g.fillStyle = "#4c1d95"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(b.text, b.x, b.y - 6 * S); g.textBaseline = "alphabetic"; });
-    text("❤️".repeat(Math.max(0, lives)), W - 60 * S, H - 28 * S, 18);
+    for (const b of bubbles) { g.font = F(700, 12); const w = Math.min(W - 10, g.measureText(b.text).width + 16), bx = Math.max(w / 2 + 5, Math.min(W - w / 2 - 5, b.x));
+      g.fillStyle = "#fff"; g.beginPath(); g.roundRect(bx - w / 2, b.y - 18 * S, w, 24 * S, 10); g.fill(); g.fillStyle = "#4c1d95"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(b.text, bx, b.y - 6 * S); g.textBaseline = "alphabetic"; }
+    hearts(now);
     text(`امتیاز ${score}`, 70 * S, H - 28 * S, 16, "#fde68a");
-    const L = LEVELS[lvl], left = Math.max(0, Math.ceil(L.time - (now - tLevel) / 1000));
-    text(`مرحله ${lvl + 1} از ${LEVELS.length}  •  ${left} ثانیه`, W / 2, H - 28 * S, 15);
-    if (now < bannerUntil) pill(banner, W / 2, H * 0.42, 17);
+    const L = STAGES[lvl], left = Math.max(0, Math.ceil(L.time - (now - tLevel) / 1000));
+    text(`مرحله ${lvl + 1} از ${STAGES.length}  •  ${left} ثانیه`, W / 2, H - 28 * S, 15);
   } else if (state === "over") {
-    pill(killer[0], W / 2, H * 0.2, 14); text(killer[1], W / 2, H * 0.27, 15, "#fde68a");
-    text("طلسم‌ها گرفتنت!", W / 2, H * 0.35, 30, "#fecdd3");
-    text(`امتیاز: ${score}  •  مرحله ${lvl + 1}`, W / 2, H * 0.43, 18);
-    text("فامیل این‌بار بردن… دوباره امتحان کن!", W / 2, H * 0.5, 15);
-    btn = button("دوباره", H * 0.65);
+    g.font = `${Math.round(70 * S)}px sans-serif`; g.textAlign = "center"; g.fillText(killer[2], W / 2, H * 0.17);
+    pill(killer[0], W / 2, H * 0.26, 13, false, "#7f1d1d", "#e11d48");
+    text(killer[1], W / 2, H * 0.34, 16, "#fde68a");
+    text("سه تا جونت رفت… طلسم‌ها گرفتنت!", W / 2, H * 0.44, 20, "#fecdd3");
+    text(`امتیاز: ${score}  •  مرحله ${lvl + 1}`, W / 2, H * 0.51, 16);
+    for (let i = 0; i < 3; i++) { g.font = `${Math.round(30 * S)}px sans-serif`; g.globalAlpha = 0.6; g.fillText("💔", W / 2 + (i - 1) * 44 * S, H * 0.6); } g.globalAlpha = 1;
+    btn = button("دوباره", H * 0.74);
   } else if (state === "win") {
     const k = Math.min(1, (now - endT) / 1500);
-    drawNimah(W / 2, H * 0.40 - (1 - k) * 200 * S, now, S * 0.85);
-    drawKey(W / 2, H * 0.6, now, S * (0.6 + 0.4 * k));
-    drawPlayer(W / 2, H * 0.72, now, false);
-    // Nimah's speech cloud, coming out of the hood
+    drawNimah(W / 2, H * 0.42 - (1 - k) * 200 * S, now, S * 0.85);
+    drawKey(W / 2, H * 0.62, now, S * (0.6 + 0.4 * k));
+    drawPlayer(W / 2, H * 0.74, now, false);
     const lines = ["من به‌خاطر تو این بازی رو درست کردم", "تا بتونی با این کلید، رایگان از جادو استفاده کنی…", `ولی ${PLAYER} جان، اینو بدون:`, "این مسائل شوخی یا بازی نیست.", "این کلید تقدیم به تو 🗝️"];
     const shown = Math.min(lines.length, Math.floor((now - endT) / 900));
-    if (shown > 0) later(() => { const bw = Math.min(W - 16, 390 * S), bh = (shown * 30 + 24) * S, by = 8 * S;
-      g.save(); g.shadowColor = "#e879f9"; g.shadowBlur = 24; g.fillStyle = "#1e0b3acc"; g.strokeStyle = "#f0abfc"; g.lineWidth = 3; g.beginPath(); g.roundRect(W / 2 - bw / 2, by, bw, bh, 22 * S); g.fill(); g.stroke();
-      for (const [cx, cy, r] of [[0, bh + 14, 8], [6, bh + 32, 5]]) { g.beginPath(); g.arc(W / 2 + cx * S, by + cy * S, r * S, 0, 7); g.fill(); g.stroke(); } g.restore();
-      g.font = F(900, 17); g.textAlign = "center"; g.textBaseline = "middle";
-      lines.slice(0, shown).forEach((l, i) => { const ly = by + (27 + i * 30) * S; g.shadowColor = i === 2 ? "#fde047" : "#e879f9"; g.shadowBlur = 14; g.fillStyle = i === 2 ? "#fef08a" : "#fdf4ff"; g.fillText(l, W / 2, ly); g.fillText(l, W / 2, ly); });
-      g.shadowBlur = 0; g.textBaseline = "alphabetic"; });
-    text(`امتیاز: ${score}`, W / 2, H * 0.81, 16);
-    if (now - endT > 900 * 6) btn = button(tg ? "🗝️ دریافت جادوی رایگان" : "🗝️ برنده شدی!", H * 0.9);
+    if (shown > 0) card(lines, 8 * S, shown, 2);
+    if (now - endT > 900 * 6) btn = button(tg ? "🗝️ دریافت جادوی رایگان" : "🗝️ برنده شدی!", H * 0.92);
   }
+  if (now < glitchUntil) glitch();
+}
+// hit feedback: the screen tears into shifted slices with a red/cyan split
+function glitch() {
+  const dpr = cv.width / W;
+  for (let i = 0; i < 7; i++) { const y = Math.random() * H, h = (8 + Math.random() * 40) * S, dx = (Math.random() - 0.5) * 40 * S;
+    try { g.drawImage(cv, 0, y * dpr, cv.width, h * dpr, dx, y, W, h); } catch {} }
+  g.fillStyle = "rgba(255,0,60,0.18)"; g.fillRect(0, 0, W, H);
+  g.fillStyle = "rgba(0,255,255,0.08)"; g.fillRect(6 * S, 0, W, H);
 }
 
 let last = performance.now();
-function loop(now) { const dt = Math.min(3, (now - last) / 16.67); last = now; update(now, dt);
-  G0.imageSmoothingQuality = "high"; render(now); requestAnimationFrame(loop); }
+function loop(now) { const dt = Math.min(3, (now - last) / 16.67); last = now; update(now, dt); render(now); requestAnimationFrame(loop); }
 requestAnimationFrame(loop);
 
 // ---- input: on-screen buttons, arrow keys, or dragging ----
@@ -306,8 +419,10 @@ addEventListener("keydown", (e) => { if (e.key === "ArrowLeft") keys.l = true; i
 addEventListener("keyup", (e) => { if (e.key === "ArrowLeft") keys.l = false; if (e.key === "ArrowRight") keys.r = false; });
 cv.addEventListener("pointerdown", (e) => {
   if (btn && state !== "play" && e.clientX > btn.x && e.clientX < btn.x + btn.w && e.clientY > btn.y && e.clientY < btn.y + btn.h) {
+    btn = null;
     if (state === "win") { if (tg && !sent) { sent = true; tg.sendData(JSON.stringify({ won: true, score })); } return; }
-    btn = null; startGame(); return;
+    if (state === "intro") { state = "play"; tLevel = lastSpawn = performance.now(); return; }
+    startGame(); return;
   }
   if (state === "play") drag = e.clientX;
 });
@@ -315,8 +430,7 @@ cv.addEventListener("pointermove", (e) => { if (drag !== null) drag = e.clientX;
 addEventListener("pointerup", () => (drag = null));
 const show = (on) => ["left", "right"].forEach((id) => (document.getElementById(id).style.display = on ? "flex" : "none"));
 setInterval(() => show(state === "play"), 200);
-// test hook: ?win=1 jumps to the ending
-if (qs.get("win")) { state = "win"; endT = performance.now(); }
+if (qs.get("win")) { state = "win"; endT = performance.now(); } // test hook: ?win=1 jumps to the ending
 </script>
 </body>
 </html>
