@@ -128,18 +128,18 @@ function music() {
   if (!AC || !musicOn) return;
   const t = AC.currentTime, step = state === "play" ? [0.3, 0.24, 0.18][lvl] : 0.34;
   if (state === "play" || state === "title" || state === "intro") {
-    if (beat % 2 === 0) tone(MEL[(beat / 2) % 16], t, step * 1.6, "square", 0.022); // lead, every other step
+    if (beat % 2 === 0) tone(MEL[(beat / 2) % 16], t, step * 1.6, "triangle", 0.05); // lead, every other step
     tone(beat % 4 < 2 ? 55 : 51.9, t, step * 0.7, "triangle", 0.09); // pulsing bass
     if (beat % 4 === 0) tone(90, t, 0.15, "sine", 0.14, -50); // kick
-    if (state === "play" && lvl > 0 && beat % 2 === 1) tone(3000, t, 0.03, "square", 0.008); // tick, from stage 2 on
+    if (state === "play" && lvl > 0 && beat % 2 === 1) tone(440, t, 0.05, "sine", 0.03); // soft off-beat, from stage 2 on
   }
   beat++; setTimeout(music, step * 1000);
 }
 const sfx = {
   throw: () => AC && tone(700 + Math.random() * 400, AC.currentTime, 0.18, "sine", 0.03, -500),
-  hit: () => { if (!AC) return; const t = AC.currentTime; tone(180, t, 0.35, "sawtooth", 0.09, 400); tone(90, t + 0.05, 0.3, "square", 0.06, -40); }, // boing + buzz
+  hit: () => { if (!AC) return; const t = AC.currentTime; tone(180, t, 0.35, "triangle", 0.12, 400); tone(90, t + 0.05, 0.3, "sine", 0.1, -40); }, // boing
   dodge: () => AC && tone(1200, AC.currentTime, 0.06, "sine", 0.015),
-  lose: () => { if (!AC) return; const t = AC.currentTime; [392, 370, 349, 311].forEach((f, i) => tone(f, t + i * 0.35, i === 3 ? 1 : 0.32, "sawtooth", 0.07, i === 3 ? -80 : 0)); },
+  lose: () => { if (!AC) return; const t = AC.currentTime; [392, 370, 349, 311].forEach((f, i) => tone(f, t + i * 0.35, i === 3 ? 1 : 0.32, "triangle", 0.1, i === 3 ? -80 : 0)); },
   win: () => { if (!AC) return; const t = AC.currentTime; [523, 659, 784, 1047, 1319].forEach((f, i) => tone(f, t + i * 0.12, 0.5, "triangle", 0.07)); },
 };
 
@@ -350,6 +350,7 @@ function render(now) {
     text("و برو تا کلید طلایی رو از نیماه بگیری", W / 2, H * 0.6 + 26 * S, 16);
     drawPlayer(W / 2, H * 0.73, now, false);
     btn = button("شروع بازی", H * 0.9);
+    g.font = F(700, 10); g.fillStyle = "#ffffff66"; g.textAlign = "left"; g.fillText("v4", 8 * S, H - 8 * S); // which build is open
   } else if (state === "intro") {
     const L = STAGES[lvl];
     ts.forEach((th, i) => drawChar(th.c, th.x, th.y, th.s * S, now + i * 300, th.c.name));
