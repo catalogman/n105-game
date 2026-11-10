@@ -362,7 +362,7 @@ function render(now) {
     pill(L.title, W / 2, H * 0.33, 18, false, lvl === 2 ? "#9d174d" : "#4c1d95", lvl === 2 ? "#ec4899" : "#8b5cf6");
     card(L.intro, H * 0.4, Math.min(L.intro.length, 1 + Math.floor((now - introT) / 700)), L.intro.length - 1);
     drawPlayer(W / 2, H - 130 * S, now, false);
-    if (now - introT > 700 * L.intro.length) btn = button(lvl ? "آماده‌ام!" : "بزن بریم!", H * 0.78);
+    if (now - introT > 700 * L.intro.length) btn = button(lvl ? "آماده‌ام!" : "بزن بریم!", H * 0.66);
   } else if (state === "play") {
     ts.forEach((th, i) => drawChar(th.c, th.x, th.y, th.s * S, now + i * 300, th.c.name));
     for (const s of spells) { const r = s.r * (0.75 + 0.5 * Math.min(1, s.y / H)); g.save(); g.translate(s.x, s.y); g.rotate(Math.sin(s.rot) * 0.35);
