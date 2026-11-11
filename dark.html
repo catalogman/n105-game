@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>دروازه‌ی سایه‌ها</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  @font-face { font-family: Kalameh; src: url("fonts/Kalameh-Black.ttf"); font-weight: 900; }
+  @font-face { font-family: Kalameh; src: url("fonts/Kalameh-Bold.ttf"); font-weight: 400 800; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; }
+  body { font-family: Kalameh, Tahoma, sans-serif; color: #f3d9d9; overflow: hidden; user-select: none; -webkit-user-select: none;
+    background: radial-gradient(130% 90% at 50% 18%, #2a0606 0%, #170303 45%, #050101 100%); }
+
+  /* ---- terror layers, all behind the stage ---- */
+  .bg { position: fixed; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
+  /* drifting smoke */
+  .smoke { position: absolute; width: 150%; height: 150%; left: -25%; top: -25%; opacity: .5;
+    background: radial-gradient(40% 30% at 30% 40%, #3a0a0a88, transparent 70%), radial-gradient(45% 35% at 70% 60%, #1a040488, transparent 70%);
+    filter: blur(20px); animation: drift 26s ease-in-out infinite alternate; }
+  @keyframes drift { to { transform: translate(5%, -4%) scale(1.15) rotate(6deg); } }
+  /* demon eyes that open in the dark corners */
+  .eye { position: absolute; width: 16px; height: 8px; border-radius: 50%; background: #ff2b2b; box-shadow: 0 0 14px 5px #ff0000aa; opacity: 0; animation: blink 7s infinite; }
+  @keyframes blink { 0%, 72%, 100% { opacity: 0; transform: scaleY(.15); } 78%, 90% { opacity: .9; transform: scaleY(1); } 84% { opacity: .3; transform: scaleY(.5); } }
+  /* fire along the bottom */
+  .fire { position: absolute; left: 0; right: 0; bottom: -10px; height: 34vh;
+    background: radial-gradient(60% 100% at 20% 100%, #ff6a00cc, transparent 70%), radial-gradient(55% 100% at 50% 100%, #ff2d00dd, transparent 70%), radial-gradient(60% 100% at 82% 100%, #ff8a00cc, transparent 70%), linear-gradient(to top, #e11d0088, transparent 80%);
+    filter: blur(8px); mix-blend-mode: screen; animation: flames .5s ease-in-out infinite alternate; transform-origin: bottom; }
+  @keyframes flames { from { transform: scaleY(.9) translateX(-2%); opacity: .85; } to { transform: scaleY(1.12) translateX(2%); opacity: 1; } }
+  .ember { position: absolute; bottom: 0; width: 4px; height: 4px; border-radius: 50%; background: #ffb13a; box-shadow: 0 0 8px 2px #ff6a00; animation: rise linear infinite; }
+  @keyframes rise { 0% { transform: translateY(0) scale(1); opacity: 0; } 15% { opacity: 1; } 100% { transform: translateY(-80vh) translateX(var(--dx, 0)) scale(.3); opacity: 0; } }
+
+  .stage { position: relative; z-index: 1; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: space-evenly; padding: 14px 16px 18px; }
+
+  /* ---- the sigil: a spinning dark mandala, a snake coiling, a pentagram ring that fills ---- */
+  .sigil { --p: 0; position: relative; width: min(70vw, 38vh, 320px); aspect-ratio: 1; flex: none; }
+  .sigil > * { position: absolute; inset: 0; }
+  .aura { inset: -22% !important; border-radius: 50%; background: radial-gradient(closest-side, #ff2d0033 0%, #8b000022 50%, transparent 75%); animation: breathe 2.4s ease-in-out infinite; }
+  @keyframes breathe { 50% { filter: brightness(1.5); } }
+  .core { inset: 16% !important; border-radius: 50%; background: url("mandala.jpg") center / 132%; filter: sepia(1) saturate(6) hue-rotate(-50deg) brightness(.6) contrast(1.3); animation: spin 11s linear infinite; }
+  .penta, .snake { width: 100%; height: 100%; }
+  .penta polygon { fill: none; stroke: #b91c1c; stroke-width: 2.5; filter: drop-shadow(0 0 4px #ff0000aa); }
+  .penta .lit { stroke: #ff3b3b; stroke-dasharray: 1000; stroke-dashoffset: calc(1000 - var(--p) * 10); transition: stroke-dashoffset .6s ease; filter: drop-shadow(0 0 7px #ff0000); }
+  .snake { animation: slither 7s ease-in-out infinite alternate; transform-origin: 50% 50%; }
+  .snake .body { fill: none; stroke-linecap: round; }
+  .snake .base { stroke: #0c3a0c; stroke-width: 8.5; }
+  .snake .skin { stroke: url(#scale); stroke-width: 5; }
+  .snake .scales { stroke: #9fe89f; stroke-width: 2; stroke-dasharray: 0.4 2.4; opacity: .6; }
+  @keyframes slither { from { transform: rotate(-5deg); } to { transform: rotate(5deg); } }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .card { width: 100%; max-width: 440px; text-align: center; }
+  .emoji { font-size: 32px; }
+  .q { font-weight: 900; font-size: clamp(18px, 5.2vw, 23px); line-height: 1.6; text-shadow: 0 2px 10px #000, 0 0 18px #8b000088; margin: 8px 0 4px; }
+  .sub { font-size: 13px; color: #c98; min-height: 16px; }
+  .opts { width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 10px; }
+  .opts.row { flex-direction: row; flex-wrap: wrap; }
+  button { font: inherit; color: #fff; border: 2px solid #ff3b3b55; border-radius: 14px; cursor: pointer; background: linear-gradient(135deg, #3a0a0a, #7f1d1d); box-shadow: 0 6px 16px #000a, inset 0 0 12px #ff000022; transition: transform .08s, box-shadow .2s; padding: 14px 16px; font-weight: 800; font-size: 17px; }
+  button:active { transform: scale(.96); }
+  button.flame { background: linear-gradient(135deg, #b91c1c, #ff6a00); border-color: #ffb13a; }
+  .opts.row button { flex: 1 1 42%; }
+  input { width: 100%; font: inherit; font-size: 18px; text-align: center; color: #fff; background: #1a0505; border: 2px solid #ff3b3b55; border-radius: 14px; padding: 14px; outline: none; }
+  input:focus { border-color: #ff6a00; box-shadow: 0 0 14px #ff000055; }
+  .skip { background: none; border: 0; box-shadow: none; color: #c98; font-size: 14px; padding: 6px; }
+  .ver { position: fixed; left: 8px; bottom: 6px; font-size: 10px; color: #ffffff33; }
+  .blast { position: fixed; inset: 0; pointer-events: none; z-index: 9; opacity: 0;
+    background: radial-gradient(circle at 50% 42%, #fff 0%, #ffd36a 12%, #ff6a00 30%, #b91c1c 55%, #4a0404 75%, transparent 100%); }
+  .reveal .blast { animation: blast 1.2s ease-out forwards; }
+  @keyframes blast { 0% { opacity: 0; transform: scale(.2); } 25% { opacity: 1; } 100% { opacity: 1; transform: scale(1.6); } }
+</style>
+</head>
+<body>
+<div class="bg" aria-hidden="true">
+  <div class="smoke"></div>
+  <div class="fire"></div>
+</div>
+<main class="stage">
+  <div class="sigil" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+    <div class="aura"></div>
+    <div class="core"></div>
+    <svg class="snake" viewBox="0 0 100 100"><defs><linearGradient id="scale" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#15591a"/><stop offset=".5" stop-color="#2f8f2f"/><stop offset="1" stop-color="#0c3a0c"/></linearGradient></defs></svg>
+    <svg class="penta" viewBox="0 0 100 100"><polygon points="50,8 61,39 93,39 67,59 77,91 50,71 23,91 33,59 7,39 39,39"/><polygon class="lit" points="50,8 61,39 93,39 67,59 77,91 50,71 23,91 33,59 7,39 39,39"/></svg>
+  </div>
+  <div class="card"><div class="emoji" id="emoji">🜏</div><div class="q" id="q"></div><div class="sub" id="sub"></div></div>
+  <div class="opts" id="opts"></div>
+</main>
+<div class="blast" aria-hidden="true"></div>
+<small class="ver">v1</small>
+<script>
+const tg = window.Telegram && Telegram.WebApp;
+const inTelegram = !!tg && tg.platform && tg.platform !== "unknown";
+if (tg) { tg.ready(); tg.expand(); try { tg.setHeaderColor("#170303"); tg.setBackgroundColor("#050101"); } catch {} }
+const spell = new URLSearchParams(location.search).get("s") || "return";
+
+const TITLES = {
+  summon: "👁‍🗨 احضار موجودات غیرارگانیک", return: "↩️ بازگرداندن ظلم به فرستنده",
+  entities: "🐾 تسلیط موجودات بر ظالم", split: "✂️ تفریق و جدایی ظالم", bind: "🔒 بستن بخت و روزیِ ظالم",
+};
+const DEEDS = ["حقم را خورد", "آبرویم را برد", "کار و روزی‌ام را بست", "مرا طلسم کرد", "جدایی انداخت", "آزارم داد"];
+const nameAsk = spell === "summon" ? "نیّت یا نامِ کسی که احضار به‌خاطرِ اوست را بنویس" : "نامِ ظالم را بنویس";
+const confirmAsk = spell === "summon" ? "آیا با آگاهیِ کامل این دروازه را می‌گشایی؟" : "آیا او به‌راستی به تو ظلم کرده؟";
+
+// the guided steps for this spell
+const steps = [
+  { type: "confirm", emoji: "🜏", q: confirmAsk, sub: "این علم شوخی‌بردار نیست و فقط بر ظالمِ واقعی اثر می‌کند." },
+  { type: "name", emoji: "🩸", q: nameAsk, sub: "فارسی یا انگلیسی، بدون عدد." },
+  { type: "mother", emoji: "🕯", q: "نامِ مادرش را بنویس", sub: "اختیاری است، ولی عمل را دقیق‌تر می‌کند." },
+  ...(spell === "summon" ? [] : [{ type: "deed", emoji: "⛓", q: "ظلمش چه بود؟", sub: "همان، به عدلِ حروف، به او بازمی‌گردد." }]),
+  { type: "final", emoji: "🔥", q: "همه چیز آماده است", sub: "دروازه را بگشا تا طلسمِ سیاهت ساخته شود." },
+];
+
+// draw the coiled serpent: a spiral body (≈1.4 turns, tapering inward) with a head, red eyes and a forked tongue
+(() => {
+  const C = 50, turns = 1.4, steps = 220, r0 = 43, r1 = 29;
+  let d = "";
+  for (let k = 0; k <= steps; k++) {
+    const t = k / steps, a = -Math.PI / 2 + t * turns * 2 * Math.PI, r = r0 - (r0 - r1) * t;
+    const x = C + r * Math.cos(a), y = C + r * Math.sin(a);
+    d += (k ? "L" : "M") + x.toFixed(2) + " " + y.toFixed(2);
+  }
+  const hx = C + r0 * Math.cos(-Math.PI / 2), hy = C + r0 * Math.sin(-Math.PI / 2); // head at the outer start
+  const snake = document.querySelector(".snake");
+  snake.insertAdjacentHTML("beforeend",
+    `<path class="body base" d="${d}"/><path class="body skin" d="${d}"/><path class="body scales" d="${d}"/>` +
+    `<path d="M${hx} ${hy - 6} L${hx - 2.4} ${hy - 11} M${hx} ${hy - 6} L${hx + 2.4} ${hy - 11}" stroke="#ff2b2b" stroke-width="1.1" fill="none"/>` + // forked tongue
+    `<ellipse cx="${hx}" cy="${hy}" rx="5.2" ry="6" fill="#1f7a1f" stroke="#0c3a0c" stroke-width="1"/>` +
+    `<circle cx="${hx - 2}" cy="${hy - 1}" r="1.5" fill="#ff2b2b"/><circle cx="${hx + 2}" cy="${hy - 1}" r="1.5" fill="#ff2b2b"/>`);
+})();
+
+const data = { dark: spell, name: "", mother: "", deed: "" };
+const $ = (id) => document.getElementById(id);
+const sigil = document.querySelector(".sigil");
+let i = 0, blocked = false;
+
+// embers + eyes once
+const bg = document.querySelector(".bg");
+for (let e = 0; e < 16; e++) bg.insertAdjacentHTML("beforeend", `<i class="ember" style="left:${(e * 61 + 7) % 100}%;--dx:${(e % 5 - 2) * 20}px;animation-duration:${3 + (e % 4)}s;animation-delay:${(e % 6) * .5}s"></i>`);
+for (const [x, y, d] of [[8, 30, 0], [88, 22, 2], [15, 68, 4], [82, 74, 1], [50, 12, 3]]) bg.insertAdjacentHTML("beforeend", `<span class="eye" style="left:${x}%;top:${y}%;animation-delay:${d}s"></span><span class="eye" style="left:calc(${x}% + 26px);top:${y}%;animation-delay:${d}s"></span>`);
+
+function fill() { const p = (i / (steps.length - 1)) * 100; sigil.style.setProperty("--p", p); sigil.setAttribute("aria-valuenow", Math.round(p)); }
+function render() {
+  const s = steps[i];
+  fill();
+  $("emoji").textContent = s.emoji;
+  $("q").textContent = s.type === "confirm" ? `${TITLES[spell]}\n${s.q}` : s.q;
+  $("q").style.whiteSpace = "pre-line";
+  $("sub").textContent = s.sub;
+  const opts = $("opts"); opts.className = "opts"; opts.innerHTML = "";
+  const btn = (label, cls, fn) => { const b = document.createElement("button"); b.textContent = label; if (cls) b.className = cls; b.onclick = fn; opts.appendChild(b); return b; };
+  const next = () => { i++; render(); };
+  if (s.type === "confirm") { opts.className = "opts row"; btn("بله، او ظالم است", "flame", next); btn("نه", "", () => { $("q").textContent = "پس این در برای تو بسته است."; $("sub").textContent = "جادوی سفلی بر بی‌گناه، به خودِ فرستنده بازمی‌گردد."; opts.innerHTML = ""; blocked = true; }); }
+  else if (s.type === "name" || s.type === "mother") {
+    const inp = document.createElement("input"); inp.placeholder = s.type === "mother" ? "نامِ مادر" : "نام"; inp.value = s.type === "mother" ? data.mother : data.name; opts.appendChild(inp);
+    const go = btn("ادامه", "flame", () => { const v = inp.value.trim(); if (s.type === "name") { if (v.length < 2) { inp.focus(); return; } data.name = v; } else data.mother = v; next(); });
+    if (s.type === "mother") btn("رد کن", "skip", () => { data.mother = ""; next(); });
+    inp.addEventListener("keydown", (e) => { if (e.key === "Enter") go.click(); });
+  }
+  else if (s.type === "deed") { opts.className = "opts row"; for (const d of DEEDS) btn(d, "", () => { data.deed = d; next(); }); }
+  else if (s.type === "final") { btn("🔥 دروازه را بگشا 🔥", "flame", open); }
+}
+let sent = false;
+function open() {
+  if (sent || blocked) return; sent = true;
+  document.body.classList.add("reveal");
+  try { tg.HapticFeedback.notificationOccurred("warning"); } catch {}
+  setTimeout(() => { if (inTelegram) tg.sendData(JSON.stringify(data)); else { sent = false; document.body.classList.remove("reveal"); $("sub").textContent = "بیرون از تلگرام فقط پیش‌نمایش است."; } }, 1000);
+}
+render();
+</script>
+</body>
+</html>
